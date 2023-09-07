@@ -1,46 +1,24 @@
-// The character constructor
-function Character(character) {
-    this.name = character.name;
-    this.height = character.height;
-    this.species = character.species;
-}
-
-Character.create = (newCharacter, result) => {
-    db.query('INSERT INTO characters SET ?', newCharacter, (err, res) => {
-        if (err) {
-            result(err);
-            return;
-        }
-
-        result({ id: res.insertId, ...newCharacter })
-    })
-};
-
-Character.retrieveAll = result => {
-    db.query("SELECT * FROM characters", (err, res) => {
-        if (err) {
-            result(err);
-            return;
-        }
-
-        result(res);
-    })
-};
-
-Character.retrieveCharacter = (characterId, result) => {
-    db.query(`SELECT * FROM characters WHERE id = ${characterId}`, (err, res) => {
-        if (err) {
-            result(err);
-            return;
-        }
-
-        if(res.length) {
-            result(res);
-            return;
-        }
-
-        result({ response: "Character not found!" });
-    })
-};
-
-module.exports = Character;
+#!/usr/bin/node
+const process = require('process');
+const request = require('request');
+const movieId = process.argv[2];
+const url = 'https://swapi-api.hbtn.io/api/films/' + movieId;
+request(url, 'utf-8', async (err, resp, body) => {
+  if (!err) {
+    const movie = JSON.parse(body);
+    const chars = movie.characters;
+    const newPromise = (url) => {
+      return new Promise(function (resolve, reject) {
+        request(url, 'utf-8', (err, resp, body) => {
+          if (err) reject(err);
+          else resolve(body);
+        });
+      });
+    };
+    for (const each in chars) {
+      const actor = await newPromise(chars[each]);
+      const charList = JSON.parse(actor);
+      console.log(charList.name);
+    }
+  }
+});
